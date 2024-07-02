@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_app/data/models/task_model.dart';
+import 'package:task_manager_app/data/models/task_status_list_model.dart';
 import 'package:task_manager_app/ui/widgets/custom_progress_indicator.dart';
 import 'package:task_manager_app/ui/widgets/snack_bar_message.dart';
 import '../../data/models/network_response.dart';
@@ -22,18 +23,19 @@ class TaskItemCard extends StatefulWidget {
 class _TaskItemCardState extends State<TaskItemCard> {
   bool _deleteInProgress = false;
   bool _editInProgress = false;
-  String dropdownValue = '';
-  List<String> statusList = [
-    'New',
-    'Completed',
-    'Canceled',
-    'InProgress',
+  TaskStatusListModel? dropdownValue;
+  List<TaskStatusListModel> statusList = [
+    TaskStatusListModel(status: 'New', color: Colors.blue),
+    TaskStatusListModel(status: 'Completed', color: AppColors.themeColor),
+    TaskStatusListModel(status: 'Canceled', color: AppColors.redColor),
+    TaskStatusListModel(status: 'InProgress', color: Colors.pink),
   ];
+
 
   @override
   void initState() {
     super.initState();
-    dropdownValue = widget.taskModel.status!;
+    dropdownValue = statusList.firstWhere((statusInfo) => statusInfo.status == widget.taskModel.status);
   }
 
   @override
@@ -59,28 +61,30 @@ class _TaskItemCardState extends State<TaskItemCard> {
                 Chip(
                   padding:
                   const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
+                  side: BorderSide.none,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
-                  label: Text(dropdownValue),
+                      borderRadius: BorderRadius.circular(20),
+                  ),
+                  label: Text(dropdownValue?.status ?? '' , style: const TextStyle(color: AppColors.whiteColor),),
+                  backgroundColor: dropdownValue?.color,
                 ),
                 ButtonBar(
                   children: [
                     Visibility(
                       visible: _editInProgress == false,
                       replacement: const CustomProgressIndicator(),
-                      child: PopupMenuButton<String>(
-                        icon: const Icon(Icons.edit_note_rounded,
-                          color: AppColors.themeColor,),
-                        onSelected: (String selectedValue) {
+                      child: PopupMenuButton<TaskStatusListModel>(
+                        icon: const Icon(Icons.edit_note_rounded, color: AppColors.themeColor,),
+                        onSelected: (TaskStatusListModel selectedValue) {
                           _updateTaskStatus(selectedValue);
                         },
                         itemBuilder: (BuildContext context) {
-                          return statusList.map((String value) {
-                            return PopupMenuItem<String>(
-                              value: value,
+                          return statusList.map((TaskStatusListModel taskStatus) {
+                            return PopupMenuItem<TaskStatusListModel>(
+                              value: taskStatus,
                               child: ListTile(
-                                title: Text(value),
-                                trailing: dropdownValue == value
+                                title: Text(taskStatus.status),
+                                trailing: dropdownValue?.status == taskStatus.status
                                     ? const Icon(Icons.done)
                                     : null,
                               ),
@@ -165,16 +169,16 @@ class _TaskItemCardState extends State<TaskItemCard> {
     }
   }
 
-  Future<void> _updateTaskStatus(String changeStatus) async {
+  Future<void> _updateTaskStatus(TaskStatusListModel taskStatus) async {
     _editInProgress = true;
     if (mounted) {
       setState(() {});
     }
-    NetworkResponse response = await NetworkCaller.getRequest(ApiUrls.updateTaskStatus(widget.taskModel.sId!, changeStatus));
+    NetworkResponse response = await NetworkCaller.getRequest(ApiUrls.updateTaskStatus(widget.taskModel.sId!, taskStatus.status));
 
     if (response.isSuccess) {
-      dropdownValue = changeStatus;
-      widget.taskModel.status = changeStatus; // Update the taskModel's status
+      dropdownValue = taskStatus;
+      widget.taskModel.status = taskStatus.status; // Update the taskModel's status
       widget.onUpdateTask();
       if (mounted) {
         showSnackBarMessage(
