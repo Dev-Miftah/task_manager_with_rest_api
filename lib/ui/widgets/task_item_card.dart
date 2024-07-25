@@ -10,7 +10,9 @@ import '../utility/colors.dart';
 
 class TaskItemCard extends StatefulWidget {
   const TaskItemCard({
-    super.key, required this.taskModel, required this.onUpdateTask,
+    super.key,
+    required this.taskModel,
+    required this.onUpdateTask,
   });
 
   final TaskModel taskModel;
@@ -31,11 +33,11 @@ class _TaskItemCardState extends State<TaskItemCard> {
     TaskStatusListModel(status: 'InProgress', color: Colors.pink),
   ];
 
-
   @override
   void initState() {
     super.initState();
-    dropdownValue = statusList.firstWhere((statusInfo) => statusInfo.status == widget.taskModel.status);
+    dropdownValue = statusList.firstWhere(
+        (statusInfo) => statusInfo.status == widget.taskModel.status);
   }
 
   @override
@@ -43,11 +45,15 @@ class _TaskItemCardState extends State<TaskItemCard> {
     return Card(
       color: AppColors.whiteColor,
       child: ListTile(
-        title: Text(widget.taskModel.title ?? '', style: const TextStyle(fontSize: 20),),
+        title: Text(
+          widget.taskModel.title ?? '',
+          style: const TextStyle(fontSize: 20),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.taskModel.description ?? '', style: const TextStyle(fontSize: 16)),
+            Text(widget.taskModel.description ?? '',
+                style: const TextStyle(fontSize: 16)),
             Text(
               'Date: ${widget.taskModel.createdDate}',
               style: const TextStyle(
@@ -60,12 +66,15 @@ class _TaskItemCardState extends State<TaskItemCard> {
               children: [
                 Chip(
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
+                      const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
                   side: BorderSide.none,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  label: Text(dropdownValue?.status ?? '' , style: const TextStyle(color: AppColors.whiteColor),),
+                  label: Text(
+                    dropdownValue?.status ?? '',
+                    style: const TextStyle(color: AppColors.whiteColor),
+                  ),
                   backgroundColor: dropdownValue?.color,
                 ),
                 ButtonBar(
@@ -74,19 +83,24 @@ class _TaskItemCardState extends State<TaskItemCard> {
                       visible: _editInProgress == false,
                       replacement: const CustomProgressIndicator(),
                       child: PopupMenuButton<TaskStatusListModel>(
-                        icon: const Icon(Icons.edit_note_rounded, color: AppColors.themeColor,),
+                        icon: const Icon(
+                          Icons.edit_note_rounded,
+                          color: AppColors.themeColor,
+                        ),
                         onSelected: (TaskStatusListModel selectedValue) {
                           _updateTaskStatus(selectedValue);
                         },
                         itemBuilder: (BuildContext context) {
-                          return statusList.map((TaskStatusListModel taskStatus) {
+                          return statusList
+                              .map((TaskStatusListModel taskStatus) {
                             return PopupMenuItem<TaskStatusListModel>(
                               value: taskStatus,
                               child: ListTile(
                                 title: Text(taskStatus.status),
-                                trailing: dropdownValue?.status == taskStatus.status
-                                    ? const Icon(Icons.done)
-                                    : null,
+                                trailing:
+                                    dropdownValue?.status == taskStatus.status
+                                        ? const Icon(Icons.done)
+                                        : null,
                               ),
                             );
                           }).toList();
@@ -144,8 +158,8 @@ class _TaskItemCardState extends State<TaskItemCard> {
     if (mounted) {
       setState(() {});
     }
-    NetworkResponse response =
-    await NetworkCaller.getRequest(ApiUrls.deleteTask(widget.taskModel.sId!));
+    NetworkResponse response = await NetworkCaller.getRequest(
+        ApiUrls.deleteTask(widget.taskModel.sId!));
 
     if (response.isSuccess) {
       widget.onUpdateTask();
@@ -174,11 +188,13 @@ class _TaskItemCardState extends State<TaskItemCard> {
     if (mounted) {
       setState(() {});
     }
-    NetworkResponse response = await NetworkCaller.getRequest(ApiUrls.updateTaskStatus(widget.taskModel.sId!, taskStatus.status));
+    NetworkResponse response = await NetworkCaller.getRequest(
+        ApiUrls.updateTaskStatus(widget.taskModel.sId!, taskStatus.status));
 
     if (response.isSuccess) {
       dropdownValue = taskStatus;
-      widget.taskModel.status = taskStatus.status; // Update the taskModel's status
+      widget.taskModel.status =
+          taskStatus.status; // Update the taskModel's status
       widget.onUpdateTask();
       if (mounted) {
         showSnackBarMessage(

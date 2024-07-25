@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../data/models/network_response.dart';
 import '../../data/models/task_model.dart';
 import '../../data/models/tasklist_wrapper_model.dart';
