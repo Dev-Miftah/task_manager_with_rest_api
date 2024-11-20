@@ -1,0 +1,70 @@
+name: iOS Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: 'stable'
+
+    - name: Install dependencies
+      run: flutter pub get
+
+    - name: Install CocoaPods
+      run: sudo gem install cocoapods
+
+    - name: Build iOS project
+      run: |
+        flutter build ipa \
+          --release \
+          --export-options-plist=ios/ExportOptions.plist
+
+    - name: Decode Certificate and Provisioning Profile
+      run: |
+        echo "$IOS_CERTIFICATE" | base64 --decode > certificate.p12
+        echo "$IOS_PROVISIONING_PROFILE" | base64 --decode > provisioning_profile.mobileprovision
+
+    - name: Set Up Keychain
+      run: |
+        security create-keychain -p github-actions keychain
+        security import certificate.p12 -k keychain -P "$IOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+        security list-keychains -s keychain
+        security default-keychain -s keychain
+        security unlock-keychain -p github-actions keychain
+
+    - name: Install Provisioning Profile
+      run: mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles && cp provisioning_profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
+
+    - name: Build and Archive
+      run: |
+        xcodebuild -workspace ios/Runner.xcworkspace \
+          -scheme Runner \
+          -configuration Release \
+          -archivePath build/Runner.xcarchive archive
+
+    - name: Export .ipa
+      run: |
+        xcodebuild -exportArchive \
+          -archivePath build/Runner.xcarchive \
+          -exportOptionsPlist ios/ExportOptions.plist \
+          -exportPath build
+
+    - name: Upload .ipa as Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: iOS-app
+        path: build/*.ipa
